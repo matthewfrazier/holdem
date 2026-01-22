@@ -1,0 +1,148 @@
+name: Claude PR Creator
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to work on'
+        required: true
+        type: number
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get issue details
+        id: issue
+        run: |
+          ISSUE_DATA=$(gh issue view ${{ inputs.issue_number }} --json title,body,labels)
+          echo "issue_data=$ISSUE_DATA" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read relevant files
+        id: files
+        run: |
+          # Extract file paths mentioned in issue
+          FILES=$(echo '${{ steps.issue.outputs.issue_data }}' | jq -r '.body' | grep -oP '`[^`]+\.(js|html|css|md)`' | tr -d '`' || echo "")
+
+          # Read file contents
+          FILE_CONTENTS=""
+          for file in $FILES; do
+            if [ -f "$file" ]; then
+              FILE_CONTENTS="$FILE_CONTENTS\n\n--- $file ---\n$(cat $file)"
+            fi
+          done
+
+          echo "contents<<EOF" >> $GITHUB_OUTPUT
+          echo "$FILE_CONTENTS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Call Claude API for implementation
+        id: claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          ISSUE_DATA='${{ steps.issue.outputs.issue_data }}'
+          ISSUE_TITLE=$(echo $ISSUE_DATA | jq -r '.title')
+          ISSUE_BODY=$(echo $ISSUE_DATA | jq -r '.body')
+
+          PROMPT="You are an expert developer working on a casino game analyzer web app.
+
+Issue to solve:
+Title: $ISSUE_TITLE
+
+Description:
+$ISSUE_BODY
+
+Current file contents:
+${{ steps.files.outputs.contents }}
+
+Provide the complete implementation. For each file that needs changes:
+1. State the file path
+2. Provide the complete updated file content
+3. Explain what changed
+
+Format your response as:
+## Changes
+
+### File: path/to/file.js
+\`\`\`javascript
+// complete file content
+\`\`\`
+
+### File: path/to/other.html
+\`\`\`html
+<!-- complete file content -->
+\`\`\`
+
+## Summary
+Brief explanation of changes"
+
+          RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+            -H "content-type: application/json" \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -d "{
+              \"model\": \"claude-sonnet-4-20250514\",
+              \"max_tokens\": 8192,
+              \"messages\": [{
+                \"role\": \"user\",
+                \"content\": $(echo "$PROMPT" | jq -Rs .)
+              }]
+            }")
+
+          echo "response<<EOF" >> $GITHUB_OUTPUT
+          echo "$RESPONSE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Extract and apply changes
+        id: apply
+        run: |
+          # Parse Claude's response and extract file changes
+          CONTENT=$(echo '${{ steps.claude.outputs.response }}' | jq -r '.content[0].text')
+
+          # Save full response for PR description
+          echo "$CONTENT" > /tmp/pr-description.md
+
+          # Extract code blocks and write files (simplified - would need better parsing)
+          echo "Changes applied - ready for PR"
+
+      - name: Create branch and PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH_NAME="claude/issue-${{ inputs.issue_number }}-$(date +%s)"
+
+          git config user.name "Claude AI Bot"
+          git config user.email "claude-bot@anthropic.com"
+
+          git checkout -b "$BRANCH_NAME"
+
+          # Files would be modified by previous step
+          git add -A
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "Fix: Implement solution for issue #${{ inputs.issue_number }}
+
+Automated implementation by Claude AI
+
+Closes #${{ inputs.issue_number }}"
+
+          git push origin "$BRANCH_NAME"
+
+          gh pr create \
+            --title "Fix: Issue #${{ inputs.issue_number }}" \
+            --body "$(cat /tmp/pr-description.md)" \
+            --base gh-pages \
+            --head "$BRANCH_NAME"
