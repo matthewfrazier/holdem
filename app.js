@@ -9,6 +9,7 @@ class CasinoAnalyzerApp {
     init() {
         this.setupEventListeners();
         this.setupGlossary();
+        this.setupTermModal();
         this.loadGame(CrapsAnalyzer);
     }
 
@@ -50,6 +51,212 @@ class CasinoAnalyzerApp {
                 termCard.classList.toggle('expanded');
             });
         });
+    }
+
+    setupTermModal() {
+        const modal = document.getElementById('term-modal');
+        const backdrop = modal.querySelector('.term-modal-backdrop');
+        const closeBtn = modal.querySelector('.term-modal-close');
+
+        // Close modal function
+        const closeModal = () => {
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+
+            // Remove history entry if added
+            if (this.modalHistoryState) {
+                this.modalHistoryState = false;
+            }
+        };
+
+        // Click on backdrop to close
+        backdrop.addEventListener('click', closeModal);
+
+        // Click close button
+        closeBtn.addEventListener('click', closeModal);
+
+        // ESC key to close
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeModal();
+            }
+        });
+
+        // Handle browser back button
+        window.addEventListener('popstate', (e) => {
+            if (this.modalHistoryState && modal.classList.contains('active')) {
+                closeModal();
+            }
+        });
+
+        // Delegate click handling for term links (since they're added dynamically)
+        document.body.addEventListener('click', (e) => {
+            const termLink = e.target.closest('.term-link');
+            if (termLink) {
+                e.preventDefault();
+                const termId = termLink.dataset.term;
+                this.showTermModal(termId);
+            }
+        });
+    }
+
+    showTermModal(termId) {
+        const definitions = this.getTermDefinitions();
+        const term = definitions[termId];
+
+        if (!term) return;
+
+        const modal = document.getElementById('term-modal');
+        const title = modal.querySelector('.term-modal-title');
+        const body = modal.querySelector('.term-modal-body');
+
+        title.textContent = term.title;
+        body.innerHTML = term.content;
+
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+
+        // Add history entry for back button support on mobile
+        if (window.history.pushState) {
+            this.modalHistoryState = true;
+            window.history.pushState({ modal: true }, '');
+        }
+    }
+
+    getTermDefinitions() {
+        return {
+            'house-edge': {
+                title: 'House Edge',
+                content: `
+                    <p><strong>The casino's mathematical advantage expressed as a percentage of your bet.</strong></p>
+                    <p>For example, a 5% house edge means that for every $100 you bet, you can expect to lose $5 on average over time. This doesn't mean you'll lose exactly $5 every time – you might win or lose in the short term – but over thousands of bets, the math works out to this average.</p>
+                    <p><strong>Key points:</strong></p>
+                    <ul>
+                        <li>Lower house edge = better odds for the player</li>
+                        <li>The house edge never changes, regardless of betting systems</li>
+                        <li>It's calculated from the true odds vs. the payout odds</li>
+                    </ul>
+                `
+            },
+            'expected-value': {
+                title: 'Expected Value (EV)',
+                content: `
+                    <p><strong>The average amount you can expect to win or lose per bet over time.</strong></p>
+                    <p>Expected Value is calculated by multiplying each possible outcome by its probability. In casino games, the EV is almost always negative for the player (positive for the house).</p>
+                    <p><strong>Example:</strong> If a bet has -$5.26 EV per $100, you can expect to lose $5.26 for every $100 wagered on average.</p>
+                `
+            },
+            'basic-strategy': {
+                title: 'Basic Strategy (Blackjack)',
+                content: `
+                    <p><strong>The mathematically optimal way to play every hand in blackjack.</strong></p>
+                    <p>Basic strategy is a set of rules that tells you the best decision (hit, stand, double, split) for every possible combination of your cards and the dealer's up card. It's been computed using millions of simulations and probability calculations.</p>
+                    <p><strong>Using basic strategy correctly:</strong></p>
+                    <ul>
+                        <li>Reduces the house edge to around 0.5%</li>
+                        <li>Requires memorization or using a strategy card</li>
+                        <li>Varies slightly based on table rules</li>
+                        <li>Does NOT guarantee winning, but minimizes losses over time</li>
+                    </ul>
+                `
+            },
+            'good-rules': {
+                title: 'Good Rules (Blackjack)',
+                content: `
+                    <p><strong>Table rules that are favorable to the player and reduce the house edge.</strong></p>
+                    <p><strong>Player-favorable rules include:</strong></p>
+                    <ul>
+                        <li><strong>Blackjack pays 3:2</strong> (not 6:5) – This is critical! 6:5 adds ~1.4% to house edge</li>
+                        <li><strong>Dealer stands on soft 17</strong> (S17) – Reduces house edge by ~0.2%</li>
+                        <li><strong>Double after split allowed</strong> (DAS) – Reduces house edge by ~0.15%</li>
+                        <li><strong>Late surrender</strong> – Reduces house edge by ~0.07%</li>
+                        <li><strong>Fewer decks</strong> – Single deck is best, but rare with good rules</li>
+                        <li><strong>Resplit aces</strong> – Small advantage for player</li>
+                    </ul>
+                    <p><strong>Bad rules to avoid:</strong> 6:5 blackjack, dealer hits soft 17 (H17), no double after split, no surrender</p>
+                `
+            },
+            'odds-bet': {
+                title: 'Odds Bet (Craps)',
+                content: `
+                    <p><strong>The only bet in the casino that has zero house edge – it pays true odds.</strong></p>
+                    <p>After establishing a point in craps, you can place an additional bet behind your Pass/Don't Pass line bet. This "odds bet" pays exactly according to the true mathematical probability of winning.</p>
+                    <p><strong>Odds bet payouts:</strong></p>
+                    <ul>
+                        <li>Point is 4 or 10: Pays 2:1 (true odds)</li>
+                        <li>Point is 5 or 9: Pays 3:2</li>
+                        <li>Point is 6 or 8: Pays 6:5</li>
+                    </ul>
+                    <p><strong>The more odds you take, the lower your combined house edge.</strong> For example, with 3-4-5x odds, the combined house edge drops from 1.41% to around 0.37%.</p>
+                    <p><strong>Catch:</strong> You must make a Pass/Don't Pass bet first, which does have a house edge. The odds bet doesn't eliminate that, but it dilutes it.</p>
+                `
+            },
+            'true-odds': {
+                title: 'True Odds vs. Payout Odds',
+                content: `
+                    <p><strong>True odds are the actual mathematical probability of winning. Payout odds are what the casino pays you.</strong></p>
+                    <p><strong>Example:</strong> In American roulette, betting on a single number has:</p>
+                    <ul>
+                        <li><strong>True odds:</strong> 37:1 (37 ways to lose, 1 way to win)</li>
+                        <li><strong>Payout odds:</strong> 35:1 (casino only pays 35 to 1)</li>
+                        <li><strong>The difference is the house edge</strong> – the casino keeps that 2-unit difference</li>
+                    </ul>
+                    <p>The house edge exists because casinos pay less than true odds on winning bets. The only exception is the odds bet in craps, which pays true odds.</p>
+                `
+            },
+            'bankroll': {
+                title: 'Bankroll Management',
+                content: `
+                    <p><strong>The total amount of money you've set aside for gambling, and how you manage it.</strong></p>
+                    <p><strong>Basic principles:</strong></p>
+                    <ul>
+                        <li><strong>Never gamble with money you can't afford to lose</strong></li>
+                        <li><strong>Set a loss limit</strong> before you start playing and stick to it</li>
+                        <li><strong>Bet sizing:</strong> Each bet should be 1-5% of your total bankroll</li>
+                        <li><strong>Avoid chasing losses</strong> – increasing bets to "win back" losses usually makes things worse</li>
+                        <li><strong>Take breaks</strong> when you're up or down significantly</li>
+                    </ul>
+                    <p>Good bankroll management can't overcome the house edge, but it can help you play longer and avoid catastrophic losses.</p>
+                `
+            },
+            'variance': {
+                title: 'Variance & Standard Deviation',
+                content: `
+                    <p><strong>Variance measures how much your actual results can differ from expected value in the short term.</strong></p>
+                    <p>High variance games (like blackjack or single number roulette bets) have bigger swings – you can win or lose a lot quickly. Low variance games (like baccarat banker bets) have smaller, more consistent results.</p>
+                    <p><strong>Why it matters:</strong></p>
+                    <ul>
+                        <li>High variance = bigger swings = need larger bankroll</li>
+                        <li>Low variance = steadier results = can play longer with smaller bankroll</li>
+                        <li>Variance doesn't change the house edge – you still lose the same amount on average</li>
+                    </ul>
+                    <p><strong>Standard deviation</strong> is the square root of variance and measures the typical amount your results differ from average.</p>
+                `
+            }
+        };
+    }
+
+    // Helper to wrap term text with link markup
+    wrapTerms(text) {
+        const terms = {
+            'Basic Strategy': 'basic-strategy',
+            'Good Rules': 'good-rules',
+            'house edge': 'house-edge',
+            'House Edge': 'house-edge',
+            'Expected Value': 'expected-value',
+            'Odds': 'odds-bet',
+            'odds bet': 'odds-bet',
+            'Odds Bet': 'odds-bet'
+        };
+
+        let result = text;
+        for (const [term, id] of Object.entries(terms)) {
+            const regex = new RegExp(`\\b(${term})\\b`, 'g');
+            result = result.replace(regex, `<span class="term-link" data-term="${id}" data-tooltip="Click to learn more">$1</span>`);
+        }
+        return result;
     }
 
     debounceUpdate() {
@@ -160,8 +367,8 @@ class CasinoAnalyzerApp {
         content.innerHTML = strategy.map(s => `
             <div class="strategy-item ${s.type === 'place' ? 'place-bet' : ''}">
                 <div class="strategy-item-info">
-                    <div class="strategy-item-name">${s.name}</div>
-                    <div class="strategy-item-detail">${s.detail}</div>
+                    <div class="strategy-item-name">${this.wrapTerms(s.name)}</div>
+                    <div class="strategy-item-detail">${this.wrapTerms(s.detail)}</div>
                 </div>
                 <div class="strategy-item-amount">${s.amount}</div>
             </div>
@@ -219,10 +426,10 @@ class CasinoAnalyzerApp {
         const worstBetEl = document.getElementById('worst-bet');
         const worstEdgeEl = document.getElementById('worst-edge');
 
-        if (bestBetEl) bestBetEl.textContent = best.name;
-        if (bestEdgeEl) bestEdgeEl.textContent = `${best.houseEdge}% edge`;
-        if (worstBetEl) worstBetEl.textContent = worst.name;
-        if (worstEdgeEl) worstEdgeEl.textContent = `${worst.houseEdge}% edge`;
+        if (bestBetEl) bestBetEl.innerHTML = this.wrapTerms(best.name);
+        if (bestEdgeEl) bestEdgeEl.innerHTML = this.wrapTerms(`${best.houseEdge}% house edge`);
+        if (worstBetEl) worstBetEl.innerHTML = this.wrapTerms(worst.name);
+        if (worstEdgeEl) worstEdgeEl.innerHTML = this.wrapTerms(`${worst.houseEdge}% house edge`);
     }
 
     updateCharts() {
@@ -302,8 +509,8 @@ class CasinoAnalyzerApp {
                     ${bets.map(bet => `
                         <tr>
                             <td>
-                                <span class="bet-name-cell">${bet.name}</span>
-                                <span class="bet-desc">${bet.description}</span>
+                                <span class="bet-name-cell">${this.wrapTerms(bet.name)}</span>
+                                <span class="bet-desc">${this.wrapTerms(bet.description)}</span>
                             </td>
                             <td data-label="Edge" class="${this.getEdgeClass(bet.houseEdge)}">${bet.houseEdge}%</td>
                             <td data-label="Win %">${bet.probability.toFixed(1)}%</td>
@@ -326,7 +533,7 @@ class CasinoAnalyzerApp {
         if (!container) return;
 
         const insights = this.currentGame.getInsights();
-        container.innerHTML = `<ul>${insights.map(i => `<li>${i}</li>`).join('')}</ul>`;
+        container.innerHTML = `<ul>${insights.map(i => `<li>${this.wrapTerms(i)}</li>`).join('')}</ul>`;
     }
 }
 

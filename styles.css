@@ -539,6 +539,132 @@ header h1 {
     color: var(--primary);
 }
 
+/* Interactive Term Links */
+.term-link {
+    color: var(--secondary);
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    cursor: help;
+    position: relative;
+    font-weight: 600;
+}
+
+.term-link:hover {
+    color: #2980b9;
+    text-decoration-style: solid;
+}
+
+/* Term Definition Modal */
+.term-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.term-modal.active {
+    display: flex;
+}
+
+.term-modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.term-modal-content {
+    position: relative;
+    background: white;
+    border-radius: var(--radius);
+    max-width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.2s ease-out;
+    z-index: 1;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.term-modal-close {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: var(--danger);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    z-index: 2;
+}
+
+.term-modal-close:hover {
+    background: #c0392b;
+}
+
+.term-modal-title {
+    background: var(--secondary);
+    color: white;
+    padding: 1rem;
+    padding-right: 3rem;
+    margin: 0;
+    font-size: 1.1rem;
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.term-modal-body {
+    padding: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.term-modal-body p {
+    margin-bottom: 0.75rem;
+}
+
+.term-modal-body p:last-child {
+    margin-bottom: 0;
+}
+
+.term-modal-body ul {
+    margin: 0.5rem 0;
+    padding-left: 1.25rem;
+}
+
+.term-modal-body li {
+    margin-bottom: 0.375rem;
+}
+
+.term-modal-body strong {
+    color: var(--primary);
+}
+
 /* Footer */
 footer {
     background: rgba(255,255,255,0.9);
@@ -593,6 +719,51 @@ footer {
 
     .stat-value {
         font-size: 1.1rem;
+    }
+
+    .term-modal-content {
+        max-width: 600px;
+    }
+
+    .term-link[data-tooltip]::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-8px);
+        background: var(--primary);
+        color: white;
+        padding: 0.5rem 0.75rem;
+        border-radius: var(--radius);
+        font-size: 0.75rem;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s, transform 0.2s;
+        z-index: 1000;
+        max-width: 250px;
+        white-space: normal;
+        text-align: center;
+        font-weight: normal;
+    }
+
+    .term-link[data-tooltip]::before {
+        content: '';
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-2px);
+        border: 6px solid transparent;
+        border-top-color: var(--primary);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s, transform 0.2s;
+        z-index: 1000;
+    }
+
+    .term-link[data-tooltip]:hover::after,
+    .term-link[data-tooltip]:hover::before {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-4px);
     }
 }
 
@@ -656,6 +827,22 @@ footer {
 
     .glossary-grid {
         grid-template-columns: 1fr;
+    }
+
+    .term-modal-content {
+        max-width: 95%;
+        margin: 1rem;
+    }
+
+    .term-modal-title {
+        font-size: 1rem;
+        padding: 0.875rem;
+        padding-right: 2.5rem;
+    }
+
+    .term-modal-body {
+        padding: 0.875rem;
+        font-size: 0.85rem;
     }
 }
 
