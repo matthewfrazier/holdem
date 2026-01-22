@@ -8,6 +8,7 @@ class CasinoAnalyzerApp {
 
     init() {
         this.setupEventListeners();
+        this.setupGlossary();
         this.loadGame(CrapsAnalyzer);
     }
 
@@ -28,6 +29,26 @@ class CasinoAnalyzerApp {
                 el.addEventListener('change', () => this.updateAnalysis());
                 el.addEventListener('input', () => this.debounceUpdate());
             }
+        });
+    }
+
+    setupGlossary() {
+        // Setup expandable term definitions
+        document.querySelectorAll('.term-header').forEach(header => {
+            header.addEventListener('click', (e) => {
+                const termCard = e.currentTarget.closest('.term-card');
+                const isExpanded = termCard.classList.contains('expanded');
+
+                // Close all other terms
+                document.querySelectorAll('.term-card.expanded').forEach(card => {
+                    if (card !== termCard) {
+                        card.classList.remove('expanded');
+                    }
+                });
+
+                // Toggle current term
+                termCard.classList.toggle('expanded');
+            });
         });
     }
 

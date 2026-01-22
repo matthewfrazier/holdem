@@ -129,6 +129,152 @@
                 <h3>Key Insights</h3>
                 <div id="insights-content"></div>
             </section>
+
+            <!-- Educational Terms Glossary -->
+            <section class="glossary-section">
+                <h3>Understanding Casino Terms</h3>
+                <div class="glossary-grid">
+                    <div class="term-card">
+                        <button class="term-header" data-term="house-edge">
+                            <span class="term-name">House Edge</span>
+                            <span class="expand-icon">+</span>
+                        </button>
+                        <div class="term-content" id="term-house-edge">
+                            <p><strong>The casino's mathematical advantage expressed as a percentage of your bet.</strong></p>
+                            <p>For example, a 5% house edge means that for every $100 you bet, you can expect to lose $5 on average over time. This doesn't mean you'll lose exactly $5 every time – you might win or lose in the short term – but over thousands of bets, the math works out to this average.</p>
+                            <p><strong>Key points:</strong></p>
+                            <ul>
+                                <li>Lower house edge = better odds for the player</li>
+                                <li>The house edge never changes, regardless of betting systems</li>
+                                <li>It's calculated from the true odds vs. the payout odds</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="term-card">
+                        <button class="term-header" data-term="expected-value">
+                            <span class="term-name">Expected Value (EV)</span>
+                            <span class="expand-icon">+</span>
+                        </button>
+                        <div class="term-content" id="term-expected-value">
+                            <p><strong>The average amount you can expect to win or lose per bet over time.</strong></p>
+                            <p>Expected Value is calculated by multiplying each possible outcome by its probability. In casino games, the EV is almost always negative for the player (positive for the house).</p>
+                            <p><strong>Example:</strong> If a bet has -$5.26 EV per $100, you can expect to lose $5.26 for every $100 wagered on average.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card">
+                        <button class="term-header" data-term="basic-strategy">
+                            <span class="term-name">Basic Strategy (Blackjack)</span>
+                            <span class="expand-icon">+</span>
+                        </button>
+                        <div class="term-content" id="term-basic-strategy">
+                            <p><strong>The mathematically optimal way to play every hand in blackjack.</strong></p>
+                            <p>Basic strategy is a set of rules that tells you the best decision (hit, stand, double, split) for every possible combination of your cards and the dealer's up card. It's been computed using millions of simulations and probability calculations.</p>
+                            <p><strong>Using basic strategy correctly:</strong></p>
+                            <ul>
+                                <li>Reduces the house edge to around 0.5%</li>
+                                <li>Requires memorization or using a strategy card</li>
+                                <li>Varies slightly based on table rules</li>
+                                <li>Does NOT guarantee winning, but minimizes losses over time</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="term-card">
+                        <button class="term-header" data-term="good-rules">
+                            <span class="term-name">Good Rules (Blackjack)</span>
+                            <span class="expand-icon">+</span>
+                        </button>
+                        <div class="term-content" id="term-good-rules">
+                            <p><strong>Table rules that are favorable to the player and reduce the house edge.</strong></p>
+                            <p><strong>Player-favorable rules include:</strong></p>
+                            <ul>
+                                <li><strong>Blackjack pays 3:2</strong> (not 6:5) – This is critical! 6:5 adds ~1.4% to house edge</li>
+                                <li><strong>Dealer stands on soft 17</strong> (S17) – Reduces house edge by ~0.2%</li>
+                                <li><strong>Double after split allowed</strong> (DAS) – Reduces house edge by ~0.15%</li>
+                                <li><strong>Late surrender</strong> – Reduces house edge by ~0.07%</li>
+                                <li><strong>Fewer decks</strong> – Single deck is best, but rare with good rules</li>
+                                <li><strong>Resplit aces</strong> – Small advantage for player</li>
+                            </ul>
+                            <p><strong>Bad rules to avoid:</strong> 6:5 blackjack, dealer hits soft 17 (H17), no double after split, no surrender</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card">
+                        <button class="term-header" data-term="odds-bet">
+                            <span class="term-name">Odds Bet (Craps)</span>
+                            <span class="expand-icon">+</span>
+                        </button>
+                        <div class="term-content" id="term-odds-bet">
+                            <p><strong>The only bet in the casino that has zero house edge – it pays true odds.</strong></p>
+                            <p>After establishing a point in craps, you can place an additional bet behind your Pass/Don't Pass line bet. This "odds bet" pays exactly according to the true mathematical probability of winning.</p>
+                            <p><strong>Odds bet payouts:</strong></p>
+                            <ul>
+                                <li>Point is 4 or 10: Pays 2:1 (true odds)</li>
+                                <li>Point is 5 or 9: Pays 3:2</li>
+                                <li>Point is 6 or 8: Pays 6:5</li>
+                            </ul>
+                            <p><strong>The more odds you take, the lower your combined house edge.</strong> For example, with 3-4-5x odds, the combined house edge drops from 1.41% to around 0.37%.</p>
+                            <p><strong>Catch:</strong> You must make a Pass/Don't Pass bet first, which does have a house edge. The odds bet doesn't eliminate that, but it dilutes it.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card">
+                        <button class="term-header" data-term="true-odds">
+                            <span class="term-name">True Odds vs. Payout Odds</span>
+                            <span class="expand-icon">+</span>
+                        </button>
+                        <div class="term-content" id="term-true-odds">
+                            <p><strong>True odds are the actual mathematical probability of winning. Payout odds are what the casino pays you.</strong></p>
+                            <p><strong>Example:</strong> In American roulette, betting on a single number has:</p>
+                            <ul>
+                                <li><strong>True odds:</strong> 37:1 (37 ways to lose, 1 way to win)</li>
+                                <li><strong>Payout odds:</strong> 35:1 (casino only pays 35 to 1)</li>
+                                <li><strong>The difference is the house edge</strong> – the casino keeps that 2-unit difference</li>
+                            </ul>
+                            <p>The house edge exists because casinos pay less than true odds on winning bets. The only exception is the odds bet in craps, which pays true odds.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card">
+                        <button class="term-header" data-term="bankroll">
+                            <span class="term-name">Bankroll Management</span>
+                            <span class="expand-icon">+</span>
+                        </button>
+                        <div class="term-content" id="term-bankroll">
+                            <p><strong>The total amount of money you've set aside for gambling, and how you manage it.</strong></p>
+                            <p><strong>Basic principles:</strong></p>
+                            <ul>
+                                <li><strong>Never gamble with money you can't afford to lose</strong></li>
+                                <li><strong>Set a loss limit</strong> before you start playing and stick to it</li>
+                                <li><strong>Bet sizing:</strong> Each bet should be 1-5% of your total bankroll</li>
+                                <li><strong>Avoid chasing losses</strong> – increasing bets to "win back" losses usually makes things worse</li>
+                                <li><strong>Take breaks</strong> when you're up or down significantly</li>
+                            </ul>
+                            <p>Good bankroll management can't overcome the house edge, but it can help you play longer and avoid catastrophic losses.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card">
+                        <button class="term-header" data-term="variance">
+                            <span class="term-name">Variance & Standard Deviation</span>
+                            <span class="expand-icon">+</span>
+                        </button>
+                        <div class="term-content" id="term-variance">
+                            <p><strong>Variance measures how much your actual results can differ from expected value in the short term.</strong></p>
+                            <p>High variance games (like blackjack or single number roulette bets) have bigger swings – you can win or lose a lot quickly. Low variance games (like baccarat banker bets) have smaller, more consistent results.</p>
+                            <p><strong>Why it matters:</strong></p>
+                            <ul>
+                                <li>High variance = bigger swings = need larger bankroll</li>
+                                <li>Low variance = steadier results = can play longer with smaller bankroll</li>
+                                <li>Variance doesn't change the house edge – you still lose the same amount on average</li>
+                            </ul>
+                            <p><strong>Standard deviation</strong> is the square root of variance and measures the typical amount your results differ from average.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
