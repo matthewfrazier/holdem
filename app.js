@@ -740,17 +740,40 @@ class CasinoAnalyzerApp {
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
+                            title: (items) => {
+                                // Show full name in tooltip
+                                return bets[items[0].dataIndex].name;
+                            },
                             afterLabel: () => '💡 Click to learn more'
                         }
                     }
                 },
                 scales: {
                     y: { beginAtZero: true },
-                    x: { ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } } }
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45,
+                            font: { size: 10 },
+                            color: '#3498db'  // Make labels blue to indicate clickability
+                        }
+                    }
                 },
-                onClick: (event, elements) => {
+                onClick: (event, elements, chart) => {
+                    // Handle click on bar
                     if (elements.length > 0) {
                         const index = elements[0].index;
+                        const betName = bets[index].name;
+                        this.showTermFromText(betName);
+                        return;
+                    }
+
+                    // Handle click on label area
+                    const canvasPosition = Chart.helpers.getRelativePosition(event, chart);
+                    const dataX = chart.scales.x.getValueForPixel(canvasPosition.x);
+
+                    if (dataX !== null && dataX >= 0 && dataX < bets.length) {
+                        const index = Math.round(dataX);
                         const betName = bets[index].name;
                         this.showTermFromText(betName);
                     }
@@ -761,31 +784,67 @@ class CasinoAnalyzerApp {
         // Make canvas cursor pointer on hover
         ctx.style.cursor = 'pointer';
 
+        // Store bets data with chart for reference
+        chart._betsData = bets;
+
         this.charts[canvasId] = chart;
     }
 
     // Helper to find and show term from text
     showTermFromText(text) {
         const terms = {
+            // Blackjack strategies
             'Card Counting': 'card-counting',
             'Basic Strategy': 'basic-strategy',
             'Good Rules': 'good-rules',
             'Average Rules': 'good-rules',
             'Good Penetration': 'deck-penetration',
             'Casual Play': 'basic-strategy',
+            'Few Mistakes': 'basic-strategy',
             'Poor Strategy': 'basic-strategy',
             'Terrible Play': 'good-rules',
             'Bad Rules': 'good-rules',
+
+            // Craps bets
             'Pass Line': 'pass-line',
-            'Don\'t Pass': 'dont-pass'
+            'Don\'t Pass': 'dont-pass',
+            'Come': 'come-bet',
+            'Place 6': 'place-bets',
+            'Place 8': 'place-bets',
+            'Place': 'place-bets',
+            'Field': 'field-bet',
+            'Proposition': 'proposition-bets',
+            'Any 7': 'proposition-bets',
+            'Any Craps': 'proposition-bets',
+            'Hard': 'proposition-bets',
+
+            // Roulette
+            'Single Number': 'payout',
+            'Red/Black': 'payout',
+            'Even/Odd': 'payout',
+
+            // Baccarat
+            'Banker': 'payout',
+            'Player': 'payout',
+            'Tie': 'payout'
         };
 
-        // Find matching term
-        for (const [term, id] of Object.entries(terms)) {
+        // Find matching term (check longest matches first)
+        const sortedTerms = Object.entries(terms).sort((a, b) => b[0].length - a[0].length);
+        for (const [term, id] of sortedTerms) {
             if (text.includes(term)) {
                 this.showTermModal(id);
                 return;
             }
+        }
+
+        // If no specific term found, show a general explanation based on game
+        if (text.includes('Blackjack') || text.includes('BJ')) {
+            this.showTermModal('basic-strategy');
+        } else if (text.includes('Craps')) {
+            this.showTermModal('pass-line');
+        } else if (text.includes('edge') || text.includes('Edge')) {
+            this.showTermModal('house-edge');
         }
     }
 

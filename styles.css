@@ -343,6 +343,17 @@ header h1 {
 }
 
 /* Charts */
+.chart-hint {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--secondary);
+    padding: 0.5rem;
+    background: linear-gradient(90deg, rgba(52, 152, 219, 0.1) 0%, rgba(52, 152, 219, 0.2) 50%, rgba(52, 152, 219, 0.1) 100%);
+    border-radius: var(--radius);
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
 .visualization-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -354,6 +365,17 @@ header h1 {
     background: var(--light);
     padding: 0.75rem;
     border-radius: var(--radius);
+    border: 2px solid transparent;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.chart-container:hover {
+    border-color: var(--secondary);
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+}
+
+.chart-container h3 {
+    cursor: default;
 }
 
 .chart-container canvas {
