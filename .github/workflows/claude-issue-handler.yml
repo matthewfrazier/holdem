@@ -57,6 +57,19 @@ jobs:
             });
 
             const data = await response.json();
+
+            // Check for API errors
+            if (data.error || !data.content || !data.content[0]) {
+              const errorMsg = data.error ? JSON.stringify(data.error, null, 2) : 'Unexpected API response structure';
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: `## Claude API Error\n\nFailed to get response from Claude API.\n\n**Error:**\n\`\`\`json\n${errorMsg}\n\`\`\`\n\n**Full response:**\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``
+              });
+              throw new Error(`Claude API error: ${errorMsg}`);
+            }
+
             const content = data.content[0].text;
 
             // Post comment
