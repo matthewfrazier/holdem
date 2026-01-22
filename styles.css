@@ -541,7 +541,6 @@ header h1 {
 
 /* Interactive Term Links */
 .term-link {
-    color: var(--secondary);
     text-decoration: underline;
     text-decoration-style: dotted;
     cursor: help;
