@@ -13,6 +13,10 @@ on:
 jobs:
   claude:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     if: |
       (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'claude-assist')) ||
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
