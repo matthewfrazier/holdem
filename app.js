@@ -1,12 +1,8 @@
-// Main application logic
+// Casino Game Analyzer - Main Application
 class CasinoAnalyzerApp {
     constructor() {
         this.currentGame = CrapsAnalyzer;
-        this.charts = {
-            houseEdge: null,
-            expectedValue: null,
-            probability: null
-        };
+        this.charts = {};
         this.init();
     }
 
@@ -16,379 +12,286 @@ class CasinoAnalyzerApp {
     }
 
     setupEventListeners() {
-        // Game selector buttons
-        const gameButtons = document.querySelectorAll('.game-btn');
-        gameButtons.forEach(btn => {
+        // Game buttons
+        document.querySelectorAll('.game-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                gameButtons.forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.game-btn').forEach(b => b.classList.remove('active'));
                 e.target.classList.add('active');
-
-                const game = e.target.dataset.game;
-                this.loadGameByName(game);
+                this.loadGameByName(e.target.dataset.game);
             });
         });
 
-        // Calculator inputs
-        const bankrollInput = document.getElementById('bankroll');
-        const betAmountInput = document.getElementById('bet-amount');
-        const betTypeSelect = document.getElementById('bet-type');
-
-        [bankrollInput, betAmountInput, betTypeSelect].forEach(input => {
-            input.addEventListener('change', () => this.updatePlaytimeCalculator());
+        // Settings inputs - update on change
+        ['bankroll', 'table-min', 'table-max', 'max-odds'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('change', () => this.updateAnalysis());
+                el.addEventListener('input', () => this.debounceUpdate());
+            }
         });
     }
 
-    loadGameByName(gameName) {
-        const gameMap = {
+    debounceUpdate() {
+        clearTimeout(this._debounce);
+        this._debounce = setTimeout(() => this.updateAnalysis(), 300);
+    }
+
+    loadGameByName(name) {
+        const games = {
             'craps': CrapsAnalyzer,
             'roulette': RouletteAnalyzer,
             'baccarat': BaccaratAnalyzer,
             'blackjack': BlackjackAnalyzer
         };
-
-        const game = gameMap[gameName];
+        const game = games[name];
         if (game) {
+            if (game.setVariation) game.setVariation(game.variations[0]);
             this.loadGame(game);
         }
     }
 
     loadGame(game) {
         this.currentGame = game;
-        this.updateGameInfo();
+        this.updateVariationTabs();
+        this.updateTitle();
+        this.updateTableSettings();
+        this.updateAnalysis();
         this.updateCharts();
         this.updateBetTable();
         this.updateInsights();
-        this.populateBetTypeSelect();
-        this.updatePlaytimeCalculator();
+        this.updateSummaryStats();
     }
 
-    updateGameInfo() {
-        const game = this.currentGame;
-        document.getElementById('game-title').textContent = `${game.name} Analysis`;
+    updateVariationTabs() {
+        const container = document.getElementById('variation-tabs');
+        if (!container) return;
 
-        const best = game.getBestBet();
-        const worst = game.getWorstBet();
-        const strategy = game.getRecommendedStrategy();
+        if (!this.currentGame.variations || this.currentGame.variations.length <= 1) {
+            container.innerHTML = '';
+            return;
+        }
 
-        document.getElementById('best-bet').textContent = best.name;
-        document.getElementById('best-edge').textContent = `${best.houseEdge}% house edge`;
+        const info = this.currentGame.getVariationInfo();
+        container.innerHTML = info.available.map(v =>
+            `<button class="variation-tab ${v.id === info.current ? 'active' : ''}"
+                     data-variation="${v.id}">${v.name}</button>`
+        ).join('');
 
-        document.getElementById('worst-bet').textContent = worst.name;
-        document.getElementById('worst-edge').textContent = `${worst.houseEdge}% house edge`;
+        container.querySelectorAll('.variation-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                this.currentGame.setVariation(e.target.dataset.variation);
+                this.loadGame(this.currentGame);
+            });
+        });
+    }
 
-        document.getElementById('strategy').textContent = strategy.strategy;
-        document.getElementById('strategy-detail').textContent = strategy.detail;
+    updateTitle() {
+        const title = document.getElementById('game-title');
+        if (!title) return;
+
+        let name = this.currentGame.name;
+        if (this.currentGame.getVariationInfo) {
+            const info = this.currentGame.getVariationInfo();
+            const current = info.available.find(v => v.id === info.current);
+            if (current) name = current.name;
+        }
+        title.textContent = `${name} Analysis`;
+    }
+
+    updateTableSettings() {
+        const section = document.getElementById('table-settings');
+        if (!section) return;
+
+        // Show table settings only for craps
+        const isCraps = this.currentGame.name === 'Craps';
+        section.style.display = isCraps ? 'block' : 'none';
+    }
+
+    getSettings() {
+        return {
+            bankroll: parseFloat(document.getElementById('bankroll')?.value) || 500,
+            tableMin: parseFloat(document.getElementById('table-min')?.value) || 15,
+            tableMax: parseFloat(document.getElementById('table-max')?.value) || 1000,
+            maxOdds: document.getElementById('max-odds')?.value || '3-4-5'
+        };
+    }
+
+    updateAnalysis() {
+        this.updateStrategySection();
+        this.updateSimulationSection();
+    }
+
+    updateStrategySection() {
+        const section = document.getElementById('strategy-section');
+        const content = document.getElementById('strategy-content');
+        if (!section || !content) return;
+
+        // Only show for craps
+        if (this.currentGame.name !== 'Craps' || !this.currentGame.generateBettingStrategy) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = 'block';
+        const { bankroll, tableMin, tableMax, maxOdds } = this.getSettings();
+        const strategy = this.currentGame.generateBettingStrategy(bankroll, tableMin, tableMax, maxOdds);
+
+        content.innerHTML = strategy.map(s => `
+            <div class="strategy-item ${s.type === 'place' ? 'place-bet' : ''}">
+                <div class="strategy-item-info">
+                    <div class="strategy-item-name">${s.name}</div>
+                    <div class="strategy-item-detail">${s.detail}</div>
+                </div>
+                <div class="strategy-item-amount">${s.amount}</div>
+            </div>
+        `).join('');
+    }
+
+    updateSimulationSection() {
+        const section = document.getElementById('simulation-section');
+        const content = document.getElementById('simulation-content');
+        if (!section || !content) return;
+
+        // Only show for craps
+        if (this.currentGame.name !== 'Craps' || !this.currentGame.runSimulation) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = 'block';
+        const { bankroll, tableMin, maxOdds } = this.getSettings();
+
+        // Run simulation
+        const sim = this.currentGame.runSimulation(bankroll, tableMin, maxOdds, 1000, 4);
+
+        content.innerHTML = `
+            <div class="simulation-stats">
+                <div class="sim-stat">
+                    <div class="sim-stat-label">Bust Rate (4hr)</div>
+                    <div class="sim-stat-value ${parseFloat(sim.bustRate) > 50 ? 'negative' : ''}">${sim.bustRate}%</div>
+                </div>
+                <div class="sim-stat">
+                    <div class="sim-stat-label">Win Rate</div>
+                    <div class="sim-stat-value ${parseFloat(sim.winRate) > 40 ? 'positive' : ''}">${sim.winRate}%</div>
+                </div>
+                <div class="sim-stat">
+                    <div class="sim-stat-label">Avg Outcome</div>
+                    <div class="sim-stat-value ${sim.avgEndBankroll < bankroll ? 'negative' : 'positive'}">$${sim.avgEndBankroll}</div>
+                </div>
+                <div class="sim-stat">
+                    <div class="sim-stat-label">Expected Loss</div>
+                    <div class="sim-stat-value negative">$${sim.expectedLoss}</div>
+                </div>
+            </div>
+            <div class="simulation-note">
+                Based on 1,000 simulated 4-hour sessions. Best 10%: $${sim.best10Pct}, Worst 10%: $${sim.worst10Pct}
+            </div>
+        `;
+    }
+
+    updateSummaryStats() {
+        const best = this.currentGame.getBestBet();
+        const worst = this.currentGame.getWorstBet();
+
+        const bestBetEl = document.getElementById('best-bet');
+        const bestEdgeEl = document.getElementById('best-edge');
+        const worstBetEl = document.getElementById('worst-bet');
+        const worstEdgeEl = document.getElementById('worst-edge');
+
+        if (bestBetEl) bestBetEl.textContent = best.name;
+        if (bestEdgeEl) bestEdgeEl.textContent = `${best.houseEdge}% edge`;
+        if (worstBetEl) worstBetEl.textContent = worst.name;
+        if (worstEdgeEl) worstEdgeEl.textContent = `${worst.houseEdge}% edge`;
     }
 
     updateCharts() {
-        this.createHouseEdgeChart();
-        this.createExpectedValueChart();
-        this.createProbabilityChart();
-    }
-
-    createHouseEdgeChart() {
-        const ctx = document.getElementById('houseEdgeChart');
-        if (!ctx) return;
-
-        const bets = this.currentGame.bets.slice().sort((a, b) => a.houseEdge - b.houseEdge);
-
-        // Limit to top 10 for readability
-        const displayBets = bets.slice(0, 10);
-
-        const data = {
-            labels: displayBets.map(b => b.name),
-            datasets: [{
-                label: 'House Edge %',
-                data: displayBets.map(b => b.houseEdge),
-                backgroundColor: displayBets.map(b => this.getColorForEdge(b.houseEdge)),
-                borderColor: displayBets.map(b => this.getColorForEdge(b.houseEdge, 0.8)),
-                borderWidth: 2
-            }]
-        };
-
-        if (this.charts.houseEdge) {
-            this.charts.houseEdge.destroy();
-        }
-
-        this.charts.houseEdge = new Chart(ctx, {
-            type: 'bar',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => {
-                                return `House Edge: ${context.parsed.y}%`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'House Edge %'
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            autoSkip: false,
-                            maxRotation: 45,
-                            minRotation: 45
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    createExpectedValueChart() {
-        const ctx = document.getElementById('expectedValueChart');
-        if (!ctx) return;
-
-        const betAmount = 100;
-        const bets = this.currentGame.bets.slice().sort((a, b) =>
-            this.currentGame.calculateExpectedValue(betAmount, b.name) -
-            this.currentGame.calculateExpectedValue(betAmount, a.name)
+        this.createChart('houseEdgeChart', 'House Edge %',
+            this.currentGame.bets.slice().sort((a, b) => a.houseEdge - b.houseEdge).slice(0, 8),
+            b => b.houseEdge,
+            b => this.getEdgeColor(b.houseEdge)
         );
 
-        const displayBets = bets.slice(0, 10);
+        this.createChart('expectedValueChart', 'Expected Loss per $100',
+            this.currentGame.bets.slice().sort((a, b) => a.houseEdge - b.houseEdge).slice(0, 8),
+            b => b.houseEdge, // EV is proportional to edge
+            () => 'rgba(231, 76, 60, 0.7)'
+        );
 
-        const data = {
-            labels: displayBets.map(b => b.name),
-            datasets: [{
-                label: 'Expected Value per $100',
-                data: displayBets.map(b => this.currentGame.calculateExpectedValue(betAmount, b.name)),
-                backgroundColor: displayBets.map(b => {
-                    const ev = this.currentGame.calculateExpectedValue(betAmount, b.name);
-                    return ev >= 0 ? 'rgba(39, 174, 96, 0.6)' : 'rgba(231, 76, 60, 0.6)';
-                }),
-                borderColor: displayBets.map(b => {
-                    const ev = this.currentGame.calculateExpectedValue(betAmount, b.name);
-                    return ev >= 0 ? 'rgba(39, 174, 96, 1)' : 'rgba(231, 76, 60, 1)';
-                }),
-                borderWidth: 2
-            }]
-        };
+        this.createChart('probabilityChart', 'Win Probability %',
+            this.currentGame.bets.slice().sort((a, b) => b.probability - a.probability).slice(0, 8),
+            b => b.probability,
+            () => 'rgba(52, 152, 219, 0.7)'
+        );
+    }
 
-        if (this.charts.expectedValue) {
-            this.charts.expectedValue.destroy();
+    createChart(canvasId, label, bets, valueFn, colorFn) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+
+        if (this.charts[canvasId]) {
+            this.charts[canvasId].destroy();
         }
 
-        this.charts.expectedValue = new Chart(ctx, {
+        this.charts[canvasId] = new Chart(ctx, {
             type: 'bar',
-            data: data,
+            data: {
+                labels: bets.map(b => b.name.length > 15 ? b.name.substring(0, 15) + '...' : b.name),
+                datasets: [{
+                    label,
+                    data: bets.map(valueFn),
+                    backgroundColor: bets.map(colorFn),
+                    borderWidth: 0
+                }]
+            },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => {
-                                return `Expected Loss: $${Math.abs(context.parsed.y).toFixed(2)}`;
-                            }
-                        }
-                    }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Expected Value ($)'
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            autoSkip: false,
-                            maxRotation: 45,
-                            minRotation: 45
-                        }
-                    }
+                    y: { beginAtZero: true },
+                    x: { ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } } }
                 }
             }
         });
     }
 
-    createProbabilityChart() {
-        const ctx = document.getElementById('probabilityChart');
-        if (!ctx) return;
-
-        const bets = this.currentGame.bets.slice().sort((a, b) => b.probability - a.probability);
-        const displayBets = bets.slice(0, 8);
-
-        const data = {
-            labels: displayBets.map(b => b.name),
-            datasets: [{
-                label: 'Win Probability %',
-                data: displayBets.map(b => b.probability),
-                backgroundColor: 'rgba(52, 152, 219, 0.6)',
-                borderColor: 'rgba(52, 152, 219, 1)',
-                borderWidth: 2
-            }]
-        };
-
-        if (this.charts.probability) {
-            this.charts.probability.destroy();
-        }
-
-        this.charts.probability = new Chart(ctx, {
-            type: 'bar',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => {
-                                return `Win Probability: ${context.parsed.y.toFixed(2)}%`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: 'Win Probability %'
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            autoSkip: false,
-                            maxRotation: 45,
-                            minRotation: 45
-                        }
-                    }
-                }
-            }
-        });
+    getEdgeColor(edge) {
+        if (edge < 2) return 'rgba(39, 174, 96, 0.7)';
+        if (edge < 5) return 'rgba(243, 156, 18, 0.7)';
+        return 'rgba(231, 76, 60, 0.7)';
     }
 
     updateBetTable() {
-        const tableContainer = document.getElementById('bet-table');
+        const container = document.getElementById('bet-table');
+        if (!container) return;
+
         const bets = this.currentGame.bets.slice().sort((a, b) => a.houseEdge - b.houseEdge);
 
-        let html = `
+        container.innerHTML = `
             <table>
                 <thead>
                     <tr>
-                        <th>Bet Type</th>
-                        <th>House Edge</th>
-                        <th>Win Prob.</th>
+                        <th>Bet</th>
+                        <th>Edge</th>
+                        <th>Win %</th>
                         <th>Payout</th>
                     </tr>
                 </thead>
                 <tbody>
-        `;
-
-        bets.forEach(bet => {
-            const edgeClass = this.getEdgeClass(bet.houseEdge);
-            html += `
-                <tr>
-                    <td><strong>${bet.name}</strong><br><small>${bet.description}</small></td>
-                    <td class="${edgeClass}">${bet.houseEdge}%</td>
-                    <td>${bet.probability.toFixed(2)}%</td>
-                    <td>${bet.payout}</td>
-                </tr>
-            `;
-        });
-
-        html += `
+                    ${bets.map(bet => `
+                        <tr>
+                            <td>
+                                <span class="bet-name-cell">${bet.name}</span>
+                                <span class="bet-desc">${bet.description}</span>
+                            </td>
+                            <td data-label="Edge" class="${this.getEdgeClass(bet.houseEdge)}">${bet.houseEdge}%</td>
+                            <td data-label="Win %">${bet.probability.toFixed(1)}%</td>
+                            <td data-label="Payout">${bet.payout}</td>
+                        </tr>
+                    `).join('')}
                 </tbody>
             </table>
         `;
-
-        tableContainer.innerHTML = html;
-    }
-
-    updateInsights() {
-        const insightsContainer = document.getElementById('insights-content');
-        const insights = this.currentGame.getInsights();
-
-        let html = '<ul>';
-        insights.forEach(insight => {
-            html += `<li>${insight}</li>`;
-        });
-        html += '</ul>';
-
-        insightsContainer.innerHTML = html;
-    }
-
-    populateBetTypeSelect() {
-        const select = document.getElementById('bet-type');
-        const bets = this.currentGame.bets.slice().sort((a, b) => a.houseEdge - b.houseEdge);
-
-        select.innerHTML = '';
-        bets.forEach((bet, index) => {
-            const option = document.createElement('option');
-            option.value = bet.name;
-            option.textContent = `${bet.name} (${bet.houseEdge}% edge)`;
-            if (index === 0) option.selected = true;
-            select.appendChild(option);
-        });
-    }
-
-    updatePlaytimeCalculator() {
-        const bankroll = parseFloat(document.getElementById('bankroll').value) || 100;
-        const betAmount = parseFloat(document.getElementById('bet-amount').value) || 5;
-        const betType = document.getElementById('bet-type').value;
-
-        if (bankroll < betAmount) {
-            document.getElementById('playtime-results').innerHTML = `
-                <p style="color: #e74c3c; font-weight: bold;">⚠️ Bet amount cannot exceed bankroll!</p>
-            `;
-            return;
-        }
-
-        const results = this.currentGame.estimatePlaytime(bankroll, betAmount, betType);
-
-        if (!results) return;
-
-        const html = `
-            <div class="result-row">
-                <span class="result-label">Estimated Hands/Spins:</span>
-                <span class="result-value">${results.estimatedBets.toLocaleString()}</span>
-            </div>
-            <div class="result-row">
-                <span class="result-label">Estimated Play Time:</span>
-                <span class="result-value">${results.estimatedHours} hours</span>
-            </div>
-            <div class="result-row">
-                <span class="result-label">Expected Loss:</span>
-                <span class="result-value" style="color: #e74c3c;">$${results.expectedLoss}</span>
-            </div>
-            <div class="result-row">
-                <span class="result-label">Risk of Ruin:</span>
-                <span class="result-value">${results.riskOfRuin}%</span>
-            </div>
-            <p style="margin-top: 1rem; font-size: 0.9rem; color: #6c757d; font-style: italic;">
-                These are estimates based on mathematical probability. Actual results will vary due to variance.
-            </p>
-        `;
-
-        document.getElementById('playtime-results').innerHTML = html;
-    }
-
-    getColorForEdge(edge, alpha = 0.6) {
-        if (edge < 0) return `rgba(39, 174, 96, ${alpha})`; // Green - player advantage
-        if (edge < 2) return `rgba(52, 152, 219, ${alpha})`; // Blue - good
-        if (edge < 5) return `rgba(243, 156, 18, ${alpha})`; // Orange - medium
-        return `rgba(231, 76, 60, ${alpha})`; // Red - bad
     }
 
     getEdgeClass(edge) {
@@ -396,9 +299,15 @@ class CasinoAnalyzerApp {
         if (edge < 5) return 'edge-medium';
         return 'edge-bad';
     }
+
+    updateInsights() {
+        const container = document.getElementById('insights-content');
+        if (!container) return;
+
+        const insights = this.currentGame.getInsights();
+        container.innerHTML = `<ul>${insights.map(i => `<li>${i}</li>`).join('')}</ul>`;
+    }
 }
 
-// Initialize the app when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    new CasinoAnalyzerApp();
-});
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', () => new CasinoAnalyzerApp());

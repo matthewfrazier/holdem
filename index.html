@@ -2,50 +2,103 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Casino Game Analyzer - House Advantage Visualizer</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <header>
-        <h1>🎲 Casino Game Analyzer</h1>
-        <p class="subtitle">Understand the mathematics behind casino games to make informed decisions</p>
+        <h1>Casino Game Analyzer</h1>
+        <p class="subtitle">Understand the mathematics behind casino games</p>
     </header>
 
     <div class="container">
         <nav class="game-selector">
-            <h2>Select a Game</h2>
             <div class="game-buttons">
                 <button class="game-btn active" data-game="craps">Craps</button>
                 <button class="game-btn" data-game="roulette">Roulette</button>
                 <button class="game-btn" data-game="baccarat">Baccarat</button>
                 <button class="game-btn" data-game="blackjack">Blackjack</button>
             </div>
+            <div class="variation-tabs" id="variation-tabs"></div>
         </nav>
 
         <main class="analysis-area">
-            <div class="game-info">
-                <h2 id="game-title">Craps Analysis</h2>
-                <div class="house-edge-summary">
-                    <div class="stat-card best">
-                        <h3>Best Bet</h3>
-                        <div class="stat-value" id="best-bet">Pass Line + Odds</div>
-                        <div class="stat-detail" id="best-edge">0.37% house edge</div>
-                    </div>
-                    <div class="stat-card worst">
-                        <h3>Worst Bet</h3>
-                        <div class="stat-value" id="worst-bet">Any 7</div>
-                        <div class="stat-detail" id="worst-edge">16.67% house edge</div>
-                    </div>
-                    <div class="stat-card average">
-                        <h3>Recommended Strategy</h3>
-                        <div class="stat-value" id="strategy">Conservative Play</div>
-                        <div class="stat-detail" id="strategy-detail">Maximize playtime</div>
-                    </div>
+            <h2 id="game-title">Craps Analysis</h2>
+
+            <!-- Table Settings (Craps) - At Top -->
+            <section class="table-settings" id="table-settings">
+                <h3>Table Settings</h3>
+                <div class="settings-grid">
+                    <label>
+                        <span>Bankroll</span>
+                        <div class="input-group">
+                            <span class="input-prefix">$</span>
+                            <input type="number" id="bankroll" value="500" min="10" step="50">
+                        </div>
+                    </label>
+                    <label>
+                        <span>Table Min</span>
+                        <div class="input-group">
+                            <span class="input-prefix">$</span>
+                            <input type="number" id="table-min" value="15" min="5" step="5">
+                        </div>
+                    </label>
+                    <label>
+                        <span>Table Max</span>
+                        <div class="input-group">
+                            <span class="input-prefix">$</span>
+                            <input type="number" id="table-max" value="1000" min="100" step="100">
+                        </div>
+                    </label>
+                    <label>
+                        <span>Max Odds</span>
+                        <select id="max-odds">
+                            <option value="0">No Odds</option>
+                            <option value="1">1x</option>
+                            <option value="2">2x</option>
+                            <option value="3-4-5" selected>3-4-5x</option>
+                            <option value="5">5x</option>
+                            <option value="10">10x (all points)</option>
+                            <option value="20">20x</option>
+                            <option value="100">100x</option>
+                        </select>
+                    </label>
+                </div>
+            </section>
+
+            <!-- Strategy Recommendations -->
+            <section class="strategy-section" id="strategy-section">
+                <h3>Recommended Bets</h3>
+                <div class="strategy-content" id="strategy-content">
+                    <!-- Dynamic content -->
+                </div>
+            </section>
+
+            <!-- Simulation Results -->
+            <section class="simulation-section" id="simulation-section">
+                <h3>Session Simulation</h3>
+                <div class="simulation-content" id="simulation-content">
+                    <!-- Dynamic content -->
+                </div>
+            </section>
+
+            <!-- Summary Stats -->
+            <div class="house-edge-summary">
+                <div class="stat-card best">
+                    <h3>Best Bet</h3>
+                    <div class="stat-value" id="best-bet">Pass Line + Odds</div>
+                    <div class="stat-detail" id="best-edge">0.37% house edge</div>
+                </div>
+                <div class="stat-card worst">
+                    <h3>Worst Bet</h3>
+                    <div class="stat-value" id="worst-bet">Any 7</div>
+                    <div class="stat-detail" id="worst-edge">16.67% house edge</div>
                 </div>
             </div>
 
+            <!-- Charts -->
             <div class="visualization-grid">
                 <div class="chart-container">
                     <h3>House Edge by Bet Type</h3>
@@ -58,53 +111,29 @@
                 </div>
 
                 <div class="chart-container">
-                    <h3>Probability Distribution</h3>
+                    <h3>Win Probability</h3>
                     <canvas id="probabilityChart"></canvas>
                 </div>
-
-                <div class="bet-table-container">
-                    <h3>Detailed Bet Analysis</h3>
-                    <div class="bet-table" id="bet-table">
-                        <!-- Dynamic content -->
-                    </div>
-                </div>
             </div>
 
-            <div class="insights-section">
-                <h3>💡 Key Insights</h3>
-                <div id="insights-content">
+            <!-- Bet Details Table -->
+            <section class="bet-details-section">
+                <h3>All Bets</h3>
+                <div class="bet-table" id="bet-table">
                     <!-- Dynamic content -->
                 </div>
-            </div>
+            </section>
 
-            <div class="playtime-calculator">
-                <h3>📊 Playtime Estimator</h3>
-                <div class="calculator-inputs">
-                    <label>
-                        Starting Bankroll: $
-                        <input type="number" id="bankroll" value="100" min="10" step="10">
-                    </label>
-                    <label>
-                        Bet Amount: $
-                        <input type="number" id="bet-amount" value="5" min="1" step="1">
-                    </label>
-                    <label>
-                        Bet Type:
-                        <select id="bet-type">
-                            <!-- Dynamic options -->
-                        </select>
-                    </label>
-                </div>
-                <div class="calculator-results" id="playtime-results">
-                    <!-- Dynamic content -->
-                </div>
-            </div>
+            <!-- Insights -->
+            <section class="insights-section">
+                <h3>Key Insights</h3>
+                <div id="insights-content"></div>
+            </section>
         </main>
     </div>
 
     <footer>
-        <p>Educational tool for understanding casino game mathematics. Gamble responsibly.</p>
-        <p class="disclaimer">This tool is for educational purposes only. All calculations are based on theoretical probability. Always set limits and never bet more than you can afford to lose.</p>
+        <p class="disclaimer">Educational tool only. All calculations are theoretical. Gamble responsibly and never bet more than you can afford to lose.</p>
     </footer>
 
     <script src="games/craps.js"></script>
