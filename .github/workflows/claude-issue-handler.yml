@@ -20,6 +20,44 @@ jobs:
       id-token: write
       actions: read
     steps:
+      - name: Validate Anthropic API Key
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          echo "Validating Anthropic API key..."
+
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::ANTHROPIC_API_KEY secret is not set"
+            exit 1
+          fi
+
+          # Make a minimal API request to validate the key
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            -d '{"model":"claude-sonnet-4-5-20250929","max_tokens":1,"messages":[{"role":"user","content":"hi"}]}' \
+            https://api.anthropic.com/v1/messages)
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ API key is valid"
+          elif [ "$HTTP_CODE" = "401" ]; then
+            echo "::error::Invalid API key - authentication failed (HTTP 401)"
+            echo "Please check your ANTHROPIC_API_KEY secret in repository settings"
+            exit 1
+          elif [ "$HTTP_CODE" = "403" ]; then
+            echo "::error::API key forbidden - may be expired or revoked (HTTP 403)"
+            echo "Please generate a new API key at https://console.anthropic.com/"
+            exit 1
+          else
+            echo "::warning::Unexpected API response (HTTP $HTTP_CODE)"
+            echo "Response: $BODY"
+            echo "Proceeding anyway..."
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
